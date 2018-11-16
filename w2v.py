@@ -4,13 +4,13 @@ from gensim.models import word2vec
 
 
 class Word2Vec:
-    def __init__(self, crop_path, dict_i2w, retrain=True):
+    def __init__(self, corpus_path, dict_i2w, retrain=True):
         """
-        :param crop_path: crop file(.txt) to train
+        :param corpus_path: crop file(.txt) to train
         :param dict_i2w: dict {index(int), word(str)}
         :param retrain: retrain the model or load the exist model
         """
-        self._crop_path = crop_path
+        self._corpus_path = corpus_path
         self._dict_i2w = dict_i2w
         self._retrain = retrain
         self._output_path = os.path.join(os.getcwd(), 'model_w2v')
@@ -39,7 +39,7 @@ class Word2Vec:
             # Train the model
             print('[Word2Vec]Training model...')
             # sentences = [[vocabulary_inv[w] for w in s] for s in mtx_sentence]
-            sentences = word2vec.Text8Corpus(self._crop_path)
+            sentences = word2vec.Text8Corpus(self._corpus_path)
             self._model = word2vec.Word2Vec(sentences, workers=num_workers,
                                             size=num_features, min_count=min_word_count,
                                             window=context, sample=downsampling)
