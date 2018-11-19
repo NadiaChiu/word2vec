@@ -16,44 +16,44 @@ class Word2Vec:
         self._output_path = os.path.join(os.getcwd(), 'model_w2v')
         if not os.path.exists(self._output_path):
             os.mkdir(self._output_path)
-        self._model = None
+        self._model = self.train_word2vec()
 
-    def train_word2vec(self, num_features=50, min_word_count=1, context=10):
+    def train_word2vec(self):
         """
         Train, saves or load exist Word2Vec model
-
-        :param num_features    # Word vector dimensionality
-        :param min_word_count  # Minimum word count
-        :param context         # Context window size
         """
-        model_path = "{f}features_{m}minwords_{c}context".format(f=num_features, m=min_word_count, c=context)
+        # Set parameters
+        workers = 2  # 執行緒數量
+        size = 256  # 訓練維度(維度太小將導致無法有效表示詞與詞之間的關係、維度太大會導致關係稀疏難以找出規則)
+        min_count = 1  # 詞數小於這個值，不被視為訓練對象
+        window = 5  # 詞向量上下文最大距離。cbow: 決定取多少詞來預測中間詞; skip-gram: 反之
+        # sg: 1=skip-gram,對低頻詞敏感; 0=cbow(default)
+        # iter: 訓練回數
+
+        model_path = "{s}size_{m}mincount_{w}window".format(s=size, m=min_count, w=window)
         model_path = os.path.join(self._output_path, model_path)
         if self._retrain is False and os.path.exists(model_path):
-            self._model = word2vec.Word2Vec.load(model_path)
+            model = word2vec.Word2Vec.load(model_path)
             print('[Word2Vec]Load existing model \'{m}\''.format(m=os.path.split(model_path)[-1]))
         else:
-            # Set parameters
-            num_workers = 2
-            downsampling = 1e-3
-
             # Train the model
             print('[Word2Vec]Training model...')
             # sentences = [[vocabulary_inv[w] for w in s] for s in mtx_sentence]
             sentences = word2vec.Text8Corpus(self._corpus_path)
-            self._model = word2vec.Word2Vec(sentences, workers=num_workers,
-                                            size=num_features, min_count=min_word_count,
-                                            window=context, sample=downsampling)
+            model = word2vec.Word2Vec(sentences=sentences, workers=workers, size=size, min_count=min_count,
+                                      window=window)
 
             # The model becomes effectively read-only, make the model much more memory-efficient.
-            self._model.init_sims(replace=True)
+            model.init_sims(replace=True)
 
             # Save the model
             print('[Word2Vec]Saving model \'{m}\''.format(m=os.path.split(model_path)[-1]))
-            self._model.save(model_path)
+            model.save(model_path)
+        return model
 
     def get_embedding_weights(self):
         """
-        Get initial weights for embedding layer.
+        Get initial weights for embedding layer
         """
         if self._model is None:
             return None
